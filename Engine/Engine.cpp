@@ -1,9 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
-#include "Device.h"
-#include "CommandQueue.h"
-#include "SwapChain.h"
-#include "DescriptorHeap.h"
+
+shared_ptr<Mesh> mesh = make_shared<Mesh>();
+shared_ptr<Shader> shader = make_shared<Shader>();
 
 void Engine::Init(const WindowInfo& info)
 {
@@ -17,12 +16,12 @@ void Engine::Init(const WindowInfo& info)
 	_device = make_shared<Device>();
 	_cmdQueue = make_shared<CommandQueue>();
 	_swapChain = make_shared<SwapChain>();
-	_descHeap = make_shared<DescriptorHeap>();
+	_rootSignature = make_shared<RootSignature>();
 
 	_device->Init();
-	_cmdQueue->Init(_device->GetDevice(), _swapChain, _descHeap);
-	_swapChain->Init(info, _device->GetDXGI(), _cmdQueue->GetCmdQueue());
-	_descHeap->Init(_device->GetDevice(), _swapChain);
+	_cmdQueue->Init(_device->GetDevice(), _swapChain);
+	_swapChain->Init(info, _device->GetDevice(), _device->GetDXGI(), _cmdQueue->GetCmdQueue());
+	_rootSignature->Init(_device->GetDevice());
 }
 
 void Engine::Render()
@@ -31,7 +30,21 @@ void Engine::Render()
 	RenderBegin();
 
 	// TODO : 나머지 물체들 그려준다
+	vector<Vertex> vec(3);
+	vec[0].pos = Vec3(0.f, 0.5f, 0.5f);
+	vec[0].color = Vec4(1.f, 0.f, 0.f, 1.f);
+	vec[1].pos = Vec3(0.5f, -0.5f, 0.5f);
+	vec[1].color = Vec4(0.f, 1.0f, 0.f, 1.f);
+	vec[2].pos = Vec3(-0.5f, -0.5f, 0.5f);
+	vec[2].color = Vec4(0.f, 0.f, 1.f, 1.f);
+	mesh->Init(vec);
 
+	shader->Init(L"..\\Resources\\Shader\\default.hlsli");
+
+	GEngine->GetCmdQueue()->WaitSync();
+
+	shader->Update();
+	mesh->Render();
 
 	// 그리기 시작
 	RenderEnd();
