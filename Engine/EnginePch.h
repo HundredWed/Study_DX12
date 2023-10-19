@@ -50,12 +50,14 @@ enum
 	SWAP_CHAIN_BUFFER_COUNT = 2
 };
 
+//화면 크기
 struct WindowInfo
 {
-	HWND	hwnd; // 출력 윈도우
-	int32	width; // 너비
+	HWND	hwnd;		// 출력 윈도우
+	int32	width;		// 너비
 	int32	height; // 높이
 	bool	windowed; // 창모드 or 전체화면
 };
 
+//전역 선언
 extern unique_ptr<class Engine> GEngine;

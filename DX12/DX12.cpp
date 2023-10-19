@@ -9,6 +9,8 @@
 #define MAX_LOADSTRING 100
 
 // Global Variables:
+WindowInfo GWindowInfo;
+
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
@@ -45,9 +47,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg;
 
+    GWindowInfo.width = 800;
+    GWindowInfo.height = 600;
+    GWindowInfo.windowed = true;
+
     //Game* game = new Game();
     unique_ptr<Game> game = make_unique<Game>();
-    game->Init();
+    game->Init(GWindowInfo);
 
     // Main message loop:
     // GetMessage : 아무 입력도 없을 땐 대기 상태가 됨. 
@@ -67,6 +73,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }  
 
         //TODO
+        game->Update();
     }
 
     return (int) msg.wParam;
@@ -124,6 +131,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   GWindowInfo.hwnd = hWnd;
 
    return TRUE;
 }
