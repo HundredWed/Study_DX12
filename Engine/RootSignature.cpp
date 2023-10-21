@@ -3,7 +3,15 @@
 
 void RootSignature::Init(ComPtr<ID3D12Device> device)
 {
-	D3D12_ROOT_SIGNATURE_DESC sigDesc = CD3DX12_ROOT_SIGNATURE_DESC(D3D12_DEFAULT/*기본상태*/);
+	//서명
+	//https://learn.microsoft.com/en-us/windows/win32/direct3d12/example-root-signatures
+	//'Adding a root Constant Buffer View' 항목
+	CD3DX12_ROOT_PARAMETER param[2];
+	param[0].InitAsConstantBufferView(0); // 0번 -> b0 -> CBV 
+	param[1].InitAsConstantBufferView(1); // 1번 -> b1 -> CBV
+
+
+	D3D12_ROOT_SIGNATURE_DESC sigDesc = CD3DX12_ROOT_SIGNATURE_DESC(2, param);//D3D12_DEFAULT/*기본상태*/
 	/*CD3DX12_ROOT_SIGNATURE_DESC(CD3DX12_DEFAULT)
 	{
 		Init(0, NULL, 0, NULL, D3D12_ROOT_SIGNATURE_FLAG_NONE);

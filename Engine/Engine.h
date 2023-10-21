@@ -6,6 +6,7 @@
 #include "RootSignature.h"
 #include "Mesh.h"
 #include "Shader.h"
+#include "ConstantBuffer.h"
 
 //사실 CommandQueue나 DescriptorHaep등 엔진에 있는 기능을
 //여기 다 때려넣는 게 보통이다
@@ -29,6 +30,7 @@ public:
 	shared_ptr<CommandQueue> GetCmdQueue() { return _cmdQueue; }
 	shared_ptr<SwapChain> GetSwapChaine() { return _swapChain; }
 	shared_ptr<RootSignature> GetRootSignature() { return _rootSignature; }
+	shared_ptr<ConstantBuffer> GetCB() { return _cb; }
 
 
 public:
@@ -48,5 +50,6 @@ private:
 	shared_ptr<CommandQueue>		 _cmdQueue;
 	shared_ptr<SwapChain>			 _swapChain;
 	shared_ptr<RootSignature>		 _rootSignature;
+	shared_ptr<ConstantBuffer>		_cb;
 };
 
