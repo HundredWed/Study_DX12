@@ -3,7 +3,6 @@
 
 void SwapChain::Init(const WindowInfo& info, ComPtr<ID3D12Device> device, ComPtr<IDXGIFactory> dxgi, ComPtr<ID3D12CommandQueue> cmdQueue)
 {
-	
 	CreatSwapChain(info, dxgi, cmdQueue);
 	CreatRTV(device);
 }

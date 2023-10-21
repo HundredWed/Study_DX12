@@ -76,7 +76,7 @@ void CommandQueue::RenderBegin(const D3D12_VIEWPORT* vp, const D3D12_RECT* rect)
 	_cmdAlloc->Reset();
 	_cmdList->Reset(_cmdAlloc.Get(), nullptr);
 
-	// swapchin에서 만들어준 두 버퍼들로 화면에 출력해줄 버퍼와 백버퍼를 설정해줌 (line: ~84)
+	// swapchin에서 만들어준 두 버퍼들로 화면에 출력해줄 버퍼와 백버퍼를 설정해줌 
 	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		_swapChain->GetBackRTVBuffer().Get(),
 		D3D12_RESOURCE_STATE_PRESENT, // 화면 출력
@@ -84,7 +84,16 @@ void CommandQueue::RenderBegin(const D3D12_VIEWPORT* vp, const D3D12_RECT* rect)
 
 	_cmdList->SetGraphicsRootSignature(ROOT_SIGNATURE.Get());
 	GEngine->GetCB()->Clear();
+	GEngine->GetTableDescHeap()->Clear();
 	//==========================================================================
+
+	ID3D12DescriptorHeap* descHeap = GEngine->GetTableDescHeap()->GetDescriptorHeap().Get();
+
+	//무거운 함수니까 빈번한 호출x
+	//TableDescriptorHeap::CommitTable()의 SetGraphicsRootDescriptorTable만 하면 크래쉬가 남
+	//무조건 SetDescriptorHeaps()를 불러주고 작업해주는 것을 권장
+	_cmdList->SetDescriptorHeaps(1, &descHeap);
+
 	_cmdList->ResourceBarrier(1, &barrier);
 
 	// Set the viewport and scissor rect.  This needs to be reset whenever the command list is reset.
