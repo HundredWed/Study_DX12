@@ -3,6 +3,7 @@
 
 shared_ptr<Mesh> mesh = make_shared<Mesh>();
 shared_ptr<Shader> shader = make_shared<Shader>();
+shared_ptr<Texture> texture = make_shared<Texture>();
 
 void Engine::Init(const WindowInfo& info)
 {
@@ -23,7 +24,7 @@ void Engine::Init(const WindowInfo& info)
 	_device->Init();
 	_cmdQueue->Init(_device->GetDevice(), _swapChain);
 	_swapChain->Init(info, _device->GetDevice(), _device->GetDXGI(), _cmdQueue->GetCmdQueue());
-	_rootSignature->Init(_device->GetDevice());
+	_rootSignature->Init();
 	_cb->Init(sizeof(Transform), 256);
 	_tableDescHeap->Init(256);
 
@@ -35,16 +36,57 @@ void Engine::Render()
 	RenderBegin();
 
 	// TODO : 나머지 물체들 그려준다
-	vector<Vertex> vec(3);
-	vec[0].pos = Vec3(0.f, 0.5f, 0.5f);
+
+	vector<Vertex> vec(4);
+	//이 처럼 vertesxt buffer만 쓰면 정점의 정보가 중복된다.
+	//정점의 정보를 주는 과정이 상당히 부담이 되기 때문에 해당 방법은 좋지 않다.
+	//그래서 등장한 것이 index buffer를 같이 쓰는 것이다.
+	/*vec[0].pos = Vec3(-0.5f, 0.5f, 0.5f);
 	vec[0].color = Vec4(1.f, 0.f, 0.f, 1.f);
-	vec[1].pos = Vec3(0.5f, -0.5f, 0.5f);
-	vec[1].color = Vec4(0.f, 1.0f, 0.f, 1.f);
-	vec[2].pos = Vec3(-0.5f, -0.5f, 0.5f);
+	vec[1].pos = Vec3(0.5f, 0.5f, 0.5f);
+	vec[1].color = Vec4(0.f, 1.f, 0.f, 1.f);
+	vec[2].pos = Vec3(0.5f, -0.5f, 0.5f);
 	vec[2].color = Vec4(0.f, 0.f, 1.f, 1.f);
-	mesh->Init(vec);
+
+	vec[3].pos = Vec3(0.5f, -0.5f, 0.5f);
+	vec[3].color = Vec4(0.f, 0.f, 1.f, 1.f);
+	vec[4].pos = Vec3(-0.5f, -0.5f, 0.5f);
+	vec[4].color = Vec4(0.f, 1.f, 0.f, 1.f);
+	vec[5].pos = Vec3(-0.5f, 0.5f, 0.5f);
+	vec[5].color = Vec4(1.f, 0.f, 0.f, 1.f);*/
+
+	vec[0].pos = Vec3(-1.f, 1.f, 0.5f);
+	vec[0].color = Vec4(1.f, 0.f, 0.f, 1.f);
+	vec[0].uv = Vec2(0.f, 0.f);
+
+	vec[1].pos = Vec3(1.f, 1.f, 0.5f);
+	vec[1].color = Vec4(0.f, 1.f, 0.f, 1.f);
+	vec[1].uv = Vec2(1.f, 0.f);
+
+	vec[2].pos = Vec3(1.f, -1.f, 0.5f);
+	vec[2].color = Vec4(0.f, 0.f, 1.f, 1.f);
+	vec[2].uv = Vec2(1.f, 1.f);
+
+	vec[3].pos = Vec3(-1.f, -1.f, 0.5f);
+	vec[3].color = Vec4(0.f, 1.f, 0.f, 1.f);
+	vec[3].uv = Vec2(0.f, 1.f);
+
+	vector<uint32> indexVec;
+	{
+		indexVec.push_back(0);
+		indexVec.push_back(1);
+		indexVec.push_back(2);
+	}
+	{
+		indexVec.push_back(0);
+		indexVec.push_back(2);
+		indexVec.push_back(3);
+	}
+
+	mesh->Init(vec, indexVec);
 
 	shader->Init(L"..\\Resources\\Shader\\default.hlsli");
+	texture->Init(L"..\\Resources\\Texture\\nikke.jpg");
 
 	GEngine->GetCmdQueue()->WaitSync();
 
@@ -52,19 +94,14 @@ void Engine::Render()
 
 	{
 		Transform t;
-		t.offset = Vec4(0.75f, 0.f, 0.f, 0.f);
+		t.offset = Vec4(0.0f, 0.f, 0.f, 0.f);
 		mesh->SetTransform(t);
+
+		mesh->SetTexture(texture);
 
 		mesh->Render();
 	}
 
-	{
-		Transform t;
-		t.offset = Vec4(0.f, 0.75f, 0.f, 0.f);
-		mesh->SetTransform(t);
-
-		mesh->Render();
-	}
 
 	// 그리기 시작
 	RenderEnd();

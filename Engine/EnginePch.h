@@ -1,6 +1,12 @@
 #pragma once
 //추가할 것들을 통합하여 관리
 
+// std::byte 사용하지 않음
+// 현재 시점에서 확장자를 불러오는 함수를 사용하기 위해
+// c++17로 프로젝트를 설정했는데
+// c++17에 std::byte라는 게 추가 되면서 namespace std와 충돌을 하게 돼 에러가 난다.
+// 그래서 std::byte를 사용하지 않는 해당 작업을 해 준다
+#define _HAS_STD_BYTE 0
 
 // 각종 include
 #include <windows.h>
@@ -12,6 +18,9 @@
 #include <list>
 #include <map>
 using namespace std;
+
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #include "d3dx12.h"
 #include <d3d12.h>
@@ -25,11 +34,20 @@ using namespace DirectX;
 using namespace DirectX::PackedVector;
 using namespace Microsoft::WRL;
 
+#include <DirectXTex/DirectXTex.h>
+#include <DirectXTex/DirectXTex.inl>
+
 // 각종 lib
 #pragma comment(lib, "d3d12")
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
 #pragma comment(lib, "d3dcompiler")
+
+#ifdef _DEBUG
+#pragma comment(lib, "DirectXTex\\DirectXTex_debug.lib")
+#else
+#pragma comment(lib, "DirectXTex\\DirectXTex.lib")
+#endif
 
 // 각종 typedef
 using int8		= __int8;
@@ -56,12 +74,23 @@ enum class CBV_REGISTER
 	END
 };
 
+enum class SRV_REGISTER : uint8
+{
+	t0 = static_cast<uint8>(CBV_REGISTER::END),
+	t1,
+	t2,
+	t3,
+	t4,
+
+	END
+};
 
 enum
 {
 	SWAP_CHAIN_BUFFER_COUNT = 2,
 	CBV_REGISTER_COUNT = CBV_REGISTER::END,
-	REGISTER_COUNT = CBV_REGISTER::END,
+	SRV_REGISTER_COUNT = static_cast<uint8>(SRV_REGISTER::END) - CBV_REGISTER_COUNT,
+	REGISTER_COUNT = CBV_REGISTER_COUNT + SRV_REGISTER_COUNT,
 };
 
 //화면 크기
@@ -77,6 +106,7 @@ struct Vertex
 {
 	Vec3 pos;
 	Vec4 color;
+	Vec2 uv;
 };
 
 struct Transform
@@ -86,6 +116,7 @@ struct Transform
 
 #define DEVICE		GEngine->GetEngineDivce()->GetDevice()
 #define CMD_LIST	GEngine->GetCmdQueue()->GetCmdList()
+#define RESOURCE_CMD_LIST	GEngine->GetCmdQueue()->GetResourceCmdList()
 #define ROOT_SIGNATURE	GEngine->GetRootSignature()->GetSignature()
 
 

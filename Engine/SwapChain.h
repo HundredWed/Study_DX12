@@ -42,6 +42,7 @@ private:
 private:
 	ComPtr<IDXGISwapChain>			_swapChain;
 
+	//descriptorheap? 53:37~
 	ComPtr<ID3D12Resource>			_renderBuffer[SWAP_CHAIN_BUFFER_COUNT];
 	ComPtr<ID3D12DescriptorHeap>	_rtvHeap;
 	uint32							_rtvHeapSize = 0;

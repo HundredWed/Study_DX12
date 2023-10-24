@@ -8,6 +8,7 @@
 #include "Shader.h"
 #include "ConstantBuffer.h"
 #include "TableDescriptorHeap.h"
+#include "Texture.h"
 
 //사실 CommandQueue나 DescriptorHaep등 엔진에 있는 기능을
 //여기 다 때려넣는 게 보통이다

@@ -2,9 +2,44 @@
 #include "Mesh.h"
 #include "Engine.h"
 
-void Mesh::Init(vector<Vertex>& vec)
+
+void Mesh::Init(const vector<Vertex>& vertexBuffer, const vector<uint32>& indexbuffer)
 {
-	_vertexCount = static_cast<uint32>(vec.size());
+	CreateVertexBuffer(vertexBuffer);
+	CreateIndexBuffer(indexbuffer);
+}
+
+void Mesh::Render()
+{
+	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);//삼각형 작업
+	//VertexBuffer
+	CMD_LIST->IASetVertexBuffers(0, 1, &_vertexBufferView); // Slot: (0~15)
+	//IndexBuffer
+	CMD_LIST->IASetIndexBuffer(&_indexBufferView);
+
+	//TODO
+	// 1) Buffer에다가 데이터 세팅
+	// 2) TableDescHeap에다가 CBV 전달
+	// 3) 모두 세팅이 끝났으면 TableDescHeap 커밋
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = GEngine->GetCB()->PushData(0, &_transform, sizeof(_transform));
+		GEngine->GetTableDescHeap()->SetCBV(handle, CBV_REGISTER::b0);
+
+		GEngine->GetTableDescHeap()->SetSRV(_tex->GetCpuHandle(), SRV_REGISTER::t0);
+	}
+
+	//dx12의 랜더링 파이프 라인의 rootargyment
+	//CommitTable의 SetGraphicsRootDescriptorTable로 레지스트에 올려주는 작업
+	//SetGraphicsRootDescriptorTable는 SetDescriptorHeaps과 같이 써야한다(CommandQueue 클래스)
+	GEngine->GetTableDescHeap()->CommitTable();
+
+	//CMD_LIST->DrawInstanced(_vertexCount, 1, 0, 0); VertexBuffer only 버전
+	CMD_LIST->DrawIndexedInstanced(_indexCount, 1, 0, 0, 0);
+}
+
+void Mesh::CreateVertexBuffer(const vector<Vertex>& buffer)
+{
+	_vertexCount = static_cast<uint32>(buffer.size());
 	uint32 bufferSize = _vertexCount * sizeof(Vertex);
 
 	//정점에대한 정보를 저장할 공간 할당(line: ~20)
@@ -27,7 +62,7 @@ void Mesh::Init(vector<Vertex>& vec)
 
 	//GPU에 주문서 투척
 	_vertexBuffer->Map(0, &readRange, &vertexDataBuffer);
-	::memcpy(vertexDataBuffer, &vec[0], bufferSize);
+	::memcpy(vertexDataBuffer, &buffer[0], bufferSize);
 	_vertexBuffer->Unmap(0, nullptr);
 
 	//여기까지 요약하자면 
@@ -43,25 +78,29 @@ void Mesh::Init(vector<Vertex>& vec)
 	_vertexBufferView.SizeInBytes = bufferSize; // 버퍼의 크기
 }
 
-void Mesh::Render()
+void Mesh::CreateIndexBuffer(const vector<uint32>& buffer)
 {
-	CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	CMD_LIST->IASetVertexBuffers(0, 1, &_vertexBufferView); // Slot: (0~15)
+	_indexCount = static_cast<uint32>(buffer.size());
+	uint32 bufferSize = _indexCount * sizeof(uint32);
 
-	//TODO
-	// 1) Buffer에다가 데이터 세팅
-	// 2) TableDescHeap에다가 CBV 전달
-	// 3) 모두 세팅이 끝났으면 TableDescHeap 커밋
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = GEngine->GetCB()->PushData(0, &_transform, sizeof(_transform));
-		GEngine->GetTableDescHeap()->SetCBV(handle, CBV_REGISTER::b0);
-	}
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = GEngine->GetCB()->PushData(0, &_transform, sizeof(_transform));
-		GEngine->GetTableDescHeap()->SetCBV(handle, CBV_REGISTER::b1);
-	}
+	D3D12_HEAP_PROPERTIES heapProperty = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
 
-	GEngine->GetTableDescHeap()->CommitTable();
+	DEVICE->CreateCommittedResource(
+		&heapProperty,
+		D3D12_HEAP_FLAG_NONE,
+		&desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&_indexBuffer));
 
-	CMD_LIST->DrawInstanced(_vertexCount, 1, 0, 0);
+	void* indexDataBuffer = nullptr;
+	CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource on the CPU.
+	_indexBuffer->Map(0, &readRange, &indexDataBuffer);
+	::memcpy(indexDataBuffer, &buffer[0], bufferSize);
+	_indexBuffer->Unmap(0, nullptr);
+
+	_indexBufferView.BufferLocation = _indexBuffer->GetGPUVirtualAddress();
+	_indexBufferView.Format = DXGI_FORMAT_R32_UINT;//uint32 타입으로 받아 주기 때문에 R32로 설정. 
+	_indexBufferView.SizeInBytes = bufferSize;
 }
