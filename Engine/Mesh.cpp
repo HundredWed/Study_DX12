@@ -42,7 +42,7 @@ void Mesh::CreateVertexBuffer(const vector<Vertex>& buffer)
 	_vertexCount = static_cast<uint32>(buffer.size());
 	uint32 bufferSize = _vertexCount * sizeof(Vertex);
 
-	//정점에대한 정보를 저장할 공간 할당(line: ~20)
+	//정점에대한 정보를 저장할 공간 할당(line: ~57)
 	//D3D12_HEAP_TYPE_UPLOAD타입들에 대해선 후에 알아보자
 	D3D12_HEAP_PROPERTIES heapProperty = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);

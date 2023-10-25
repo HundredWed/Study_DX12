@@ -9,6 +9,7 @@
 #include "ConstantBuffer.h"
 #include "TableDescriptorHeap.h"
 #include "Texture.h"
+#include "DepthStencilBuffer.h"
 
 //사실 CommandQueue나 DescriptorHaep등 엔진에 있는 기능을
 //여기 다 때려넣는 게 보통이다
@@ -34,6 +35,7 @@ public:
 	shared_ptr<RootSignature> GetRootSignature() { return _rootSignature; }
 	shared_ptr<ConstantBuffer> GetCB() { return _cb; }
 	shared_ptr<TableDescriptorHeap> GetTableDescHeap() { return _tableDescHeap; }
+	shared_ptr<DepthStencilBuffer> GetDepthStencilBuffer() { return _depthStencilBuffer; }
 
 public:
 	void RenderBegin();
@@ -54,5 +56,6 @@ private:
 	shared_ptr<RootSignature>		 _rootSignature;
 	shared_ptr<ConstantBuffer>		_cb;
 	shared_ptr<TableDescriptorHeap> _tableDescHeap;
+	shared_ptr<DepthStencilBuffer> _depthStencilBuffer;
 };
 

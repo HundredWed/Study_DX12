@@ -8,7 +8,6 @@ shared_ptr<Texture> texture = make_shared<Texture>();
 void Engine::Init(const WindowInfo& info)
 {
 	_window = info;
-	ResizeWindow(info.width, info.height);
 
 	// 그려질 화면 크기를 설정
 	_viewport = { 0, 0, static_cast<FLOAT>(info.width), static_cast<FLOAT>(info.height), 0.0f, 1.0f };
@@ -20,6 +19,7 @@ void Engine::Init(const WindowInfo& info)
 	_rootSignature = make_shared<RootSignature>();
 	_cb = make_shared<ConstantBuffer>();
 	_tableDescHeap = make_shared<TableDescriptorHeap>();
+	_depthStencilBuffer = make_shared<DepthStencilBuffer>();
 
 	_device->Init();
 	_cmdQueue->Init(_device->GetDevice(), _swapChain);
@@ -27,7 +27,12 @@ void Engine::Init(const WindowInfo& info)
 	_rootSignature->Init();
 	_cb->Init(sizeof(Transform), 256);
 	_tableDescHeap->Init(256);
+	_depthStencilBuffer->Init(_window);
 
+	// 여기서도 _depthStencilBuffer초기화 해주는데
+	// _depthStencilBuffer는 device를 사용해 초기화 해 주기 때문에
+	// 안전하게 디바이스가 만들어진 마지막에 초기화
+	ResizeWindow(info.width, info.height);
 }
 
 void Engine::Render()
@@ -55,19 +60,19 @@ void Engine::Render()
 	vec[5].pos = Vec3(-0.5f, 0.5f, 0.5f);
 	vec[5].color = Vec4(1.f, 0.f, 0.f, 1.f);*/
 
-	vec[0].pos = Vec3(-1.f, 1.f, 0.5f);
+	vec[0].pos = Vec3(-0.5f, 0.5f, 0.f);
 	vec[0].color = Vec4(1.f, 0.f, 0.f, 1.f);
 	vec[0].uv = Vec2(0.f, 0.f);
 
-	vec[1].pos = Vec3(1.f, 1.f, 0.5f);
+	vec[1].pos = Vec3(0.5f, 0.5f, 0.f);
 	vec[1].color = Vec4(0.f, 1.f, 0.f, 1.f);
 	vec[1].uv = Vec2(1.f, 0.f);
 
-	vec[2].pos = Vec3(1.f, -1.f, 0.5f);
+	vec[2].pos = Vec3(0.5f, -0.5f, 0.f);
 	vec[2].color = Vec4(0.f, 0.f, 1.f, 1.f);
 	vec[2].uv = Vec2(1.f, 1.f);
 
-	vec[3].pos = Vec3(-1.f, -1.f, 0.5f);
+	vec[3].pos = Vec3(-0.5f, -0.5f, 0.f);
 	vec[3].color = Vec4(0.f, 1.f, 0.f, 1.f);
 	vec[3].uv = Vec2(0.f, 1.f);
 
@@ -94,7 +99,17 @@ void Engine::Render()
 
 	{
 		Transform t;
-		t.offset = Vec4(0.0f, 0.f, 0.f, 0.f);
+		t.offset = Vec4(0.0f, 0.f, 0.4f, 0.f);
+		mesh->SetTransform(t);
+
+		mesh->SetTexture(texture);
+
+		mesh->Render();
+	}
+
+	{
+		Transform t;
+		t.offset = Vec4(0.25f, 0.25f, 0.3f, 0.f);
 		mesh->SetTransform(t);
 
 		mesh->SetTexture(texture);
@@ -126,4 +141,8 @@ void Engine::ResizeWindow(int32 width, int32 height)
 	RECT rect = { 0, 0, width, height };
 	::AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
 	::SetWindowPos(_window.hwnd, 0, 100, 100, width, height, 0);
+
+	// 만약 ResizeWdindow가 호출되면 화면 크기가 바뀌는 것이 기 때문에
+	// 화면 크기를 받아 초기화 하는 _depthStencilBuffer도 같이 초기화 해 준다.
+	_depthStencilBuffer->Init(_window);
 }
