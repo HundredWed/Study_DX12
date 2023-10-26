@@ -11,6 +11,9 @@
 #include "Texture.h"
 #include "DepthStencilBuffer.h"
 
+#include "Input.h"
+#include "Timer.h"
+
 //사실 CommandQueue나 DescriptorHaep등 엔진에 있는 기능을
 //여기 다 때려넣는 게 보통이다
 //하지만 그러면 구조를 파악하기 어렵기 때문에 분리했다.
@@ -21,6 +24,12 @@ public:
 
 	void Init(const WindowInfo& info);
 	void Render();
+	
+	void InitTextureInfo();//임시
+
+public:
+
+	void Update();
 
 public:
 
@@ -37,12 +46,17 @@ public:
 	shared_ptr<TableDescriptorHeap> GetTableDescHeap() { return _tableDescHeap; }
 	shared_ptr<DepthStencilBuffer> GetDepthStencilBuffer() { return _depthStencilBuffer; }
 
+	shared_ptr<Input> GetInput() { return _input; }
+	shared_ptr<Timer> GetTimer() { return _timer; }
+
 public:
 	void RenderBegin();
 	void RenderEnd();
 
+	
 	void ResizeWindow(int32 width, int32 height);
-
+private:
+	void ShowFps();
 private:
 	// 그려질 화면 크기 관련
 	WindowInfo		_window;
@@ -57,5 +71,8 @@ private:
 	shared_ptr<ConstantBuffer>		_cb;
 	shared_ptr<TableDescriptorHeap> _tableDescHeap;
 	shared_ptr<DepthStencilBuffer> _depthStencilBuffer;
+
+	shared_ptr<Input> _input = make_shared<Input>();
+	shared_ptr<Timer> _timer = make_shared<Timer>();
 };
 
