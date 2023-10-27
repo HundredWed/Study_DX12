@@ -1,9 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
+#include "Material.h"
 
 shared_ptr<Mesh> mesh = make_shared<Mesh>();
-shared_ptr<Shader> shader = make_shared<Shader>();
-shared_ptr<Texture> texture = make_shared<Texture>();
 
 
 void Engine::Init(const WindowInfo& info)
@@ -18,7 +17,6 @@ void Engine::Init(const WindowInfo& info)
 	_cmdQueue = make_shared<CommandQueue>();
 	_swapChain = make_shared<SwapChain>();
 	_rootSignature = make_shared<RootSignature>();
-	_cb = make_shared<ConstantBuffer>();
 	_tableDescHeap = make_shared<TableDescriptorHeap>();
 	_depthStencilBuffer = make_shared<DepthStencilBuffer>();
 
@@ -26,9 +24,11 @@ void Engine::Init(const WindowInfo& info)
 	_cmdQueue->Init(_device->GetDevice(), _swapChain);
 	_swapChain->Init(info, _device->GetDevice(), _device->GetDXGI(), _cmdQueue->GetCmdQueue());
 	_rootSignature->Init();
-	_cb->Init(sizeof(Transform), 256);
 	_tableDescHeap->Init(256);
 	_depthStencilBuffer->Init(_window);
+
+	CreateConstantBuffer(CBV_REGISTER::b0, sizeof(Transform), 256);
+	CreateConstantBuffer(CBV_REGISTER::b1, sizeof(MaterialParams), 256);
 
 	_input->Init(info.hwnd);
 	_timer->Init();
@@ -91,8 +91,18 @@ void Engine::InitTextureInfo()
 
 	mesh->Init(vec, indexVec);
 
+	shared_ptr<Shader> shader = make_shared<Shader>();
+	shared_ptr<Texture> texture = make_shared<Texture>();
 	shader->Init(L"..\\Resources\\Shader\\default.hlsli");
 	texture->Init(L"..\\Resources\\Texture\\nikke.jpg");
+
+	shared_ptr<Material> material = make_shared<Material>();
+	material->SetShader(shader);
+	material->SetFloat(0, 0.3f);
+	material->SetFloat(1, 0.4f);
+	material->SetFloat(2, 0.3f);
+	material->SetTexture(0, texture);
+	mesh->SetMaterial(material);
 
 	GEngine->GetCmdQueue()->WaitSync();
 }
@@ -109,7 +119,6 @@ void Engine::Render()
 	
 	GEngine->RenderBegin();
 
-	shader->Update();
 
 	{
 		static Transform t = {};
@@ -124,8 +133,6 @@ void Engine::Render()
 			t.offset.x += 1.f * DELTA_TIME;
 
 		mesh->SetTransform(t);
-
-		mesh->SetTexture(texture);
 
 		mesh->Render();
 	}
@@ -177,3 +184,14 @@ void Engine::ShowFps()
 
 	::SetWindowText(_window.hwnd, text);
 }
+
+void Engine::CreateConstantBuffer(CBV_REGISTER reg, uint32 bufferSize, uint32 count)
+{
+	uint8 typeInt = static_cast<uint8>(reg);
+	assert(_constantBuffers.size() == typeInt);
+
+	shared_ptr<ConstantBuffer> buffer = make_shared<ConstantBuffer>();
+	buffer->Init(reg, bufferSize, count);
+	_constantBuffers.push_back(buffer);
+}
+

@@ -89,7 +89,7 @@ enum
 {
 	SWAP_CHAIN_BUFFER_COUNT = 2,
 	CBV_REGISTER_COUNT = CBV_REGISTER::END,
-	SRV_REGISTER_COUNT = static_cast<uint8>(SRV_REGISTER::END) - CBV_REGISTER_COUNT,
+	SRV_REGISTER_COUNT = (static_cast<uint8>(SRV_REGISTER::END)) - (CBV_REGISTER_COUNT),
 	REGISTER_COUNT = CBV_REGISTER_COUNT + SRV_REGISTER_COUNT,
 };
 
@@ -121,6 +121,8 @@ struct Transform
 
 #define INPUT				GEngine->GetInput()
 #define DELTA_TIME			GEngine->GetTimer()->GetDeltaTime()
+
+#define CONST_BUFFER(type)	GEngine->GetConstantBuffer(type)
 
 //전역 선언
 extern unique_ptr<class Engine> GEngine;
