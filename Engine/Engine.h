@@ -30,6 +30,7 @@ public:
 public:
 
 	void Update();
+	void LateUpdate();
 
 public:
 

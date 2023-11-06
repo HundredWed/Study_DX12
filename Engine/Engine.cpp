@@ -1,9 +1,13 @@
 #include "pch.h"
 #include "Engine.h"
 #include "Material.h"
+#include "Transform.h"
 
-shared_ptr<Mesh> mesh = make_shared<Mesh>();
+#include "GameObject.h"
+#include "MeshRenderer.h"
 
+// test
+shared_ptr<GameObject> gameObject = make_shared<GameObject>();
 
 void Engine::Init(const WindowInfo& info)
 {
@@ -27,7 +31,7 @@ void Engine::Init(const WindowInfo& info)
 	_tableDescHeap->Init(256);
 	_depthStencilBuffer->Init(_window);
 
-	CreateConstantBuffer(CBV_REGISTER::b0, sizeof(Transform), 256);
+	CreateConstantBuffer(CBV_REGISTER::b0, sizeof(TransformMatrix), 256);
 	CreateConstantBuffer(CBV_REGISTER::b1, sizeof(MaterialParams), 256);
 
 	_input->Init(info.hwnd);
@@ -89,7 +93,14 @@ void Engine::InitTextureInfo()
 		indexVec.push_back(3);
 	}
 
-	mesh->Init(vec, indexVec);
+	gameObject->Init(); // Transform
+
+	shared_ptr<MeshRenderer> meshRenderer = make_shared<MeshRenderer>();
+	{
+		shared_ptr<Mesh> mesh = make_shared<Mesh>();
+		mesh->Init(vec, indexVec);
+		meshRenderer->SetMesh(mesh);
+	}
 
 	shared_ptr<Shader> shader = make_shared<Shader>();
 	shared_ptr<Texture> texture = make_shared<Texture>();
@@ -102,7 +113,9 @@ void Engine::InitTextureInfo()
 	material->SetFloat(1, 0.4f);
 	material->SetFloat(2, 0.3f);
 	material->SetTexture(0, texture);
-	mesh->SetMaterial(material);
+	meshRenderer->SetMaterial(material);
+
+	gameObject->AddComponent(meshRenderer);
 
 	GEngine->GetCmdQueue()->WaitSync();
 }
@@ -119,23 +132,7 @@ void Engine::Render()
 	
 	GEngine->RenderBegin();
 
-
-	{
-		static Transform t = {};
-
-		if (INPUT->GetButton(KEY_TYPE::W))
-			t.offset.y += 1.f * DELTA_TIME;
-		if (INPUT->GetButton(KEY_TYPE::S))
-			t.offset.y -= 1.f * DELTA_TIME;
-		if (INPUT->GetButton(KEY_TYPE::A))
-			t.offset.x -= 1.f * DELTA_TIME;
-		if (INPUT->GetButton(KEY_TYPE::D))
-			t.offset.x += 1.f * DELTA_TIME;
-
-		mesh->SetTransform(t);
-
-		mesh->Render();
-	}
+	gameObject->Update();
 
 
 	// 그리기 시작
@@ -148,6 +145,10 @@ void Engine::Update()
 	_timer->Update();
 
 	ShowFps();
+}
+
+void Engine::LateUpdate()
+{
 }
 
 void Engine::RenderBegin()

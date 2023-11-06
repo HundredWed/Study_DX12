@@ -17,15 +17,6 @@ void Mesh::Render()
 	//IndexBuffer
 	CMD_LIST->IASetIndexBuffer(&_indexBufferView);
 
-	//TODO
-	// 1) Buffer에다가 데이터 세팅
-	// 2) TableDescHeap에다가 CBV 전달
-	// 3) 모두 세팅이 끝났으면 TableDescHeap 커밋
-
-	CONST_BUFFER(CONSTANT_BUFFER_TYPE::TRANSFORM)->PushData(&_transform, sizeof(_transform));
-
-	_mat->Update();
-
 	//dx12의 랜더링 파이프 라인의 rootargyment
 	//CommitTable의 SetGraphicsRootDescriptorTable로 레지스트에 올려주는 작업
 	//SetGraphicsRootDescriptorTable는 SetDescriptorHeaps과 같이 써야한다(CommandQueue 클래스)
