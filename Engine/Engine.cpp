@@ -2,12 +2,9 @@
 #include "Engine.h"
 #include "Material.h"
 #include "Transform.h"
-
-#include "GameObject.h"
-#include "MeshRenderer.h"
-
-// test
-shared_ptr<GameObject> gameObject = make_shared<GameObject>();
+#include "Input.h"
+#include "Timer.h"
+#include "SceneManager.h"
 
 void Engine::Init(const WindowInfo& info)
 {
@@ -34,123 +31,35 @@ void Engine::Init(const WindowInfo& info)
 	CreateConstantBuffer(CBV_REGISTER::b0, sizeof(TransformMatrix), 256);
 	CreateConstantBuffer(CBV_REGISTER::b1, sizeof(MaterialParams), 256);
 
-	_input->Init(info.hwnd);
-	_timer->Init();
-
 	// 여기서도 _depthStencilBuffer초기화 해주는데
 	// _depthStencilBuffer는 device를 사용해 초기화 해 주기 때문에
 	// 안전하게 디바이스가 만들어진 마지막에 초기화
 	ResizeWindow(info.width, info.height);
 
-	InitTextureInfo();
-}
-
-void Engine::InitTextureInfo()
-{
-	vector<Vertex> vec(4);
-	//이 처럼 vertesxt buffer만 쓰면 정점의 정보가 중복된다.
-	//정점의 정보를 주는 과정이 상당히 부담이 되기 때문에 해당 방법은 좋지 않다.
-	//그래서 등장한 것이 index buffer를 같이 쓰는 것이다.
-	/*vec[0].pos = Vec3(-0.5f, 0.5f, 0.5f);
-	vec[0].color = Vec4(1.f, 0.f, 0.f, 1.f);
-	vec[1].pos = Vec3(0.5f, 0.5f, 0.5f);
-	vec[1].color = Vec4(0.f, 1.f, 0.f, 1.f);
-	vec[2].pos = Vec3(0.5f, -0.5f, 0.5f);
-	vec[2].color = Vec4(0.f, 0.f, 1.f, 1.f);
-
-	vec[3].pos = Vec3(0.5f, -0.5f, 0.5f);
-	vec[3].color = Vec4(0.f, 0.f, 1.f, 1.f);
-	vec[4].pos = Vec3(-0.5f, -0.5f, 0.5f);
-	vec[4].color = Vec4(0.f, 1.f, 0.f, 1.f);
-	vec[5].pos = Vec3(-0.5f, 0.5f, 0.5f);
-	vec[5].color = Vec4(1.f, 0.f, 0.f, 1.f);*/
-
-	vec[0].pos = Vec3(-0.5f, 0.5f, 0.f);
-	vec[0].color = Vec4(1.f, 0.f, 0.f, 1.f);
-	vec[0].uv = Vec2(0.f, 0.f);
-
-	vec[1].pos = Vec3(0.5f, 0.5f, 0.f);
-	vec[1].color = Vec4(0.f, 1.f, 0.f, 1.f);
-	vec[1].uv = Vec2(1.f, 0.f);
-
-	vec[2].pos = Vec3(0.5f, -0.5f, 0.f);
-	vec[2].color = Vec4(0.f, 0.f, 1.f, 1.f);
-	vec[2].uv = Vec2(1.f, 1.f);
-
-	vec[3].pos = Vec3(-0.5f, -0.5f, 0.f);
-	vec[3].color = Vec4(0.f, 1.f, 0.f, 1.f);
-	vec[3].uv = Vec2(0.f, 1.f);
-
-	vector<uint32> indexVec;
-	{
-		indexVec.push_back(0);
-		indexVec.push_back(1);
-		indexVec.push_back(2);
-	}
-	{
-		indexVec.push_back(0);
-		indexVec.push_back(2);
-		indexVec.push_back(3);
-	}
-
-	gameObject->Init(); // Transform
-
-	shared_ptr<MeshRenderer> meshRenderer = make_shared<MeshRenderer>();
-	{
-		shared_ptr<Mesh> mesh = make_shared<Mesh>();
-		mesh->Init(vec, indexVec);
-		meshRenderer->SetMesh(mesh);
-	}
-
-	shared_ptr<Shader> shader = make_shared<Shader>();
-	shared_ptr<Texture> texture = make_shared<Texture>();
-	shader->Init(L"..\\Resources\\Shader\\default.hlsli");
-	texture->Init(L"..\\Resources\\Texture\\nikke.jpg");
-
-	shared_ptr<Material> material = make_shared<Material>();
-	material->SetShader(shader);
-	material->SetFloat(0, 0.3f);
-	material->SetFloat(1, 0.4f);
-	material->SetFloat(2, 0.3f);
-	material->SetTexture(0, texture);
-	meshRenderer->SetMaterial(material);
-
-	gameObject->AddComponent(meshRenderer);
-
-	GEngine->GetCmdQueue()->WaitSync();
-}
-
-void Engine::Render()
-{
-	// 키보드 체크
-	Update();
-
-	// 요청사항 설정
-	RenderBegin();
-
-	// TODO : 나머지 물체들 그려준다
-	
-	GEngine->RenderBegin();
-
-	gameObject->Update();
-
-
-	// 그리기 시작
-	RenderEnd();
+	GET_SINGLE(Input)->Init(info.hwnd);
+	GET_SINGLE(Timer)->Init();
 }
 
 void Engine::Update()
 {
-	_input->Update();
-	_timer->Update();
+	GET_SINGLE(Input)->Update();
+	GET_SINGLE(Timer)->Update();
+
+	Render();
 
 	ShowFps();
 }
 
-void Engine::LateUpdate()
+void Engine::Render()
 {
-}
+	// 요청사항 설정
+	RenderBegin();
 
+	GET_SINGLE(SceneManager)->Update();
+
+	// 그리기 시작
+	RenderEnd();
+}
 void Engine::RenderBegin()
 {
 	_cmdQueue->RenderBegin(&_viewport, &_scissorRect);
@@ -178,7 +87,7 @@ void Engine::ResizeWindow(int32 width, int32 height)
 
 void Engine::ShowFps()
 {
-	uint32 fps = _timer->GetFps();
+	uint32 fps = GET_SINGLE(Timer)->GetFps();
 
 	WCHAR text[100] = L"";
 	::wsprintf(text, L"FPS : %d", fps);
